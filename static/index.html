@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Aura Skincare — Aria Support Voice CX Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css?v=3.0">
 </head>
+
 <body>
   <!-- Header Bar Inspired by Tessel Template -->
   <header class="studio-topbar">
@@ -19,12 +23,20 @@
         <span class="brand-tag">Aria Support</span>
       </div>
       <div class="topbar-actions">
-        <a href="https://github.com/ParthG24/Aira_agent" target="_blank" rel="noopener noreferrer" class="topbar-link github-link" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:inherit;font-size:12px;font-weight:500;padding:5px 10px;border:1px solid #222;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.borderColor='#444';this.style.background='#111'" onmouseout="this.style.borderColor='#222';this.style.background='transparent'">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        <a href="https://github.com/ParthG24/Aira_agent" target="_blank" rel="noopener noreferrer"
+          class="topbar-link github-link"
+          style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:inherit;font-size:12px;font-weight:500;padding:5px 10px;border:1px solid #222;border-radius:6px;transition:all 0.2s;"
+          onmouseover="this.style.borderColor='#444';this.style.background='#111'"
+          onmouseout="this.style.borderColor='#222';this.style.background='transparent'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+          </svg>
           <span>GitHub</span>
         </a>
         <span class="evaluator-pill">DataStraw Assessment Test</span>
-        <button id="btnOpenDocs" class="topbar-link btn-docs-trigger" style="background:none;border:none;cursor:pointer;font-family:inherit;">Architecture & Security</button>
+        <button id="btnOpenDocs" class="topbar-link btn-docs-trigger"
+          style="background:none;border:none;cursor:pointer;font-family:inherit;">Architecture & Security</button>
       </div>
     </div>
   </header>
@@ -60,11 +72,22 @@
           <div class="call-controls-bar">
             <div class="controls-left">
               <button id="btnStartCall" class="btn-primary btn-call-start">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path
+                    d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+                  </path>
+                </svg>
                 <span>Start Call</span>
               </button>
               <button id="btnEndCall" class="btn-outline btn-call-end" disabled>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L6.09 9.91"></path><line x1="23" y1="1" x2="1" y2="23"></line></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path
+                    d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L6.09 9.91">
+                  </path>
+                  <line x1="23" y1="1" x2="1" y2="23"></line>
+                </svg>
                 <span>End Call</span>
               </button>
             </div>
@@ -94,15 +117,21 @@
           <div class="transcript-feed-window" id="transcriptFeed">
             <div class="empty-state">
               <p>Click <strong>Start Call</strong> above to speak with Aria using your microphone.</p>
-              <span class="empty-sub">Or select any test prompt from the right panel to test order lookups, cancellations, and policies.</span>
+              <span class="empty-sub">Or select any test prompt from the right panel to test order lookups,
+                cancellations, and policies.</span>
             </div>
           </div>
 
           <!-- Message Text Input Row -->
           <div class="chat-input-bar">
-            <input type="text" id="chatInput" placeholder="Type a message or speak into your microphone..." autocomplete="off" />
+            <input type="text" id="chatInput" placeholder="Type a message or speak into your microphone..."
+              autocomplete="off" />
             <button id="btnSendChat" class="btn-icon-submit" aria-label="Send message">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
             </button>
           </div>
         </section>
@@ -115,7 +144,7 @@
               <span class="block-num">01</span>
               <div>
                 <h3>Simulate Caller Identity</h3>
-                <p class="block-desc">Switch caller to test authorization guardrails (IDOR) & gender salutations ("Madam" / "Sir")</p>
+                <p class="block-desc">Switch caller to test authorization guardrails </p>
               </div>
             </div>
             <div class="caller-chips-grid">
@@ -161,7 +190,8 @@
                   <span class="status-pill status-delivery">Out for Delivery</span>
                 </div>
                 <div class="order-product-title">Vitamin C Serum (30ml) • ₹699</div>
-                <div class="order-detail-line">Customer: <strong>Priya Sharma</strong> • Carrier: BlueDart BD-982103 • Arriving Today (6 PM)</div>
+                <div class="order-detail-line">Customer: <strong>Priya Sharma</strong> • Carrier: BlueDart BD-982103 •
+                  Arriving Today (6 PM)</div>
               </div>
 
               <div class="order-item-box" data-query="Can I return ORD-102? It is unopened.">
@@ -170,7 +200,8 @@
                   <span class="status-pill status-delivered">Delivered (14d ago)</span>
                 </div>
                 <div class="order-product-title">Hydrating Sunscreen SPF 50 • ₹499</div>
-                <div class="order-detail-line">Customer: <strong>Rahul Verma</strong> • Delivered 14 days ago • Exceeds 7-day return policy</div>
+                <div class="order-detail-line">Customer: <strong>Rahul Verma</strong> • Delivered 14 days ago • Exceeds
+                  7-day return policy</div>
               </div>
 
               <div class="order-item-box" data-query="I want to cancel order ORD-103.">
@@ -179,7 +210,8 @@
                   <span class="status-pill status-processing">Processing</span>
                 </div>
                 <div class="order-product-title">Green Tea Face Wash + Toner • ₹850</div>
-                <div class="order-detail-line">Customer: <strong>Ananya Patel</strong> • Ordered 3 hours ago • Eligible for 2-step cancellation</div>
+                <div class="order-detail-line">Customer: <strong>Ananya Patel</strong> • Ordered 3 hours ago • Eligible
+                  for 2-step cancellation</div>
               </div>
             </div>
           </div>
@@ -195,15 +227,22 @@
             </div>
             <div class="scenarios-grid">
               <button class="chip-btn" data-text="Where is my order ORD-101?">Track ORD-101 (Priya)</button>
-              <button class="chip-btn" data-text="Can you check order ORD-102 for me?">IDOR Check (ORD-102 as Priya)</button>
-              <button class="chip-btn" data-text="I want to cancel order ORD-103.">Cancel ORD-103 (Verification 1)</button>
-              <button class="chip-btn" data-text="Yes, I confirm cancellation of ORD-103.">Confirm Cancel (Verification 2)</button>
-              <button class="chip-btn" data-text="Can I return ORD-102? It is unopened.">Return ORD-102 (14d Policy Trap)</button>
-              <button class="chip-btn" data-text="I bought a face cream 20 days ago and opened it. Can I return it?">20d Opened Return Trap</button>
-              <button class="chip-btn" data-text="Is Cash on Delivery available for an order of 3000 rupees?">COD Limit (₹2,500 Cap)</button>
+              <button class="chip-btn" data-text="Can you check order ORD-102 for me?">IDOR Check (ORD-102 as
+                Priya)</button>
+              <button class="chip-btn" data-text="I want to cancel order ORD-103.">Cancel ORD-103 (Verification
+                1)</button>
+              <button class="chip-btn" data-text="Yes, I confirm cancellation of ORD-103.">Confirm Cancel (Verification
+                2)</button>
+              <button class="chip-btn" data-text="Can I return ORD-102? It is unopened.">Return ORD-102 (14d Policy
+                Trap)</button>
+              <button class="chip-btn" data-text="I bought a face cream 20 days ago and opened it. Can I return it?">20d
+                Opened Return Trap</button>
+              <button class="chip-btn" data-text="Is Cash on Delivery available for an order of 3000 rupees?">COD Limit
+                (₹2,500 Cap)</button>
               <button class="chip-btn" data-text="What are your shipping charges?">Shipping Threshold (₹499)</button>
               <button class="chip-btn" data-text="Where is my package?">Vague Inquiry Test</button>
-              <button class="chip-btn" data-text="Can you book a flight to Mumbai for me?">Out-of-Scope Rejection</button>
+              <button class="chip-btn" data-text="Can you book a flight to Mumbai for me?">Out-of-Scope
+                Rejection</button>
             </div>
           </div>
 
@@ -220,7 +259,8 @@
               </div>
             </div>
             <div class="summary-code-box">
-              <pre id="summaryJsonBlock" class="summary-code-content">// Post-call summary will populate here automatically when call ends...</pre>
+              <pre id="summaryJsonBlock"
+                class="summary-code-content">// Post-call summary will populate here automatically when call ends...</pre>
             </div>
           </div>
 
@@ -273,9 +313,16 @@
         <!-- Section 1: Philosophy Core -->
         <div class="docs-section">
           <h3>1. The Core Philosophy: Deterministic Code Over Probabilistic LLM</h3>
-          <p>A central design decision in this system is: <strong>The LLM provides conversational guidance, but deterministic Python code strictly enforces all business rules, authorization, and data safety.</strong></p>
+          <p>A central design decision in this system is: <strong>The LLM provides conversational guidance, but
+              deterministic Python code strictly enforces all business rules, authorization, and data safety.</strong>
+          </p>
           <div class="docs-callout">
-            <strong>Why AI Security is Harder than Traditional Software:</strong> In standard APIs, fixed server-side <code>if/else</code> statements cannot be rewritten by customer input. With LLMs, probabilistic models can be socially engineered or injected via natural language speech. If given unconstrained tool authority, a manipulated LLM could issue unauthorized cancellations or leak competitor/customer records. Therefore, <strong>risk multiplies with tool permissions</strong>, and the LLM must never be trusted with business logic.
+            <strong>Why AI Security is Harder than Traditional Software:</strong> In standard APIs, fixed server-side
+            <code>if/else</code> statements cannot be rewritten by customer input. With LLMs, probabilistic models can
+            be socially engineered or injected via natural language speech. If given unconstrained tool authority, a
+            manipulated LLM could issue unauthorized cancellations or leak competitor/customer records. Therefore,
+            <strong>risk multiplies with tool permissions</strong>, and the LLM must never be trusted with business
+            logic.
           </div>
         </div>
 
@@ -287,29 +334,39 @@
               <span class="layer-pill">Layer 1</span>
               <h4>Input Guardrails</h4>
               <p>• <strong>Client RMS VAD:</strong> Filters ambient noise & room echo before streaming to server.<br>
-              • <strong>ASR Hallucination Filter:</strong> Discards Whisper noise tokens (<code>"the"</code>, <code>"you"</code>) & low-confidence audio.<br>
-              • <strong>Untrusted Delimiters:</strong> Customer input is enclosed in <code>&lt;customer_utterance&gt;</code> tags.</p>
+                • <strong>ASR Hallucination Filter:</strong> Discards Whisper noise tokens (<code>"the"</code>,
+                <code>"you"</code>) & low-confidence audio.<br>
+                • <strong>Untrusted Delimiters:</strong> Customer input is enclosed in
+                <code>&lt;customer_utterance&gt;</code> tags.</p>
             </div>
             <div class="guardrail-card">
               <span class="layer-pill">Layer 2</span>
               <h4>System & Persona Guardrails</h4>
               <p>• <strong>Aria Persona:</strong> Friendly, concise Indian English customer specialist.<br>
-              • <strong>Injection Immunity:</strong> Hard instructions to ignore prompt override commands or administrative claims.<br>
-              • <strong>Out-of-Scope Deflection:</strong> Non-brand requests (flights, coding) are politely rejected without invoking backend tools.</p>
+                • <strong>Injection Immunity:</strong> Hard instructions to ignore prompt override commands or
+                administrative claims.<br>
+                • <strong>Out-of-Scope Deflection:</strong> Non-brand requests (flights, coding) are politely rejected
+                without invoking backend tools.</p>
             </div>
             <div class="guardrail-card">
               <span class="layer-pill">Layer 3</span>
               <h4>Tool & Deterministic Guardrails</h4>
-              <p>• <strong>IDOR Caller Verification:</strong> Verifies order ownership (Priya cannot access Rahul's ORD-102).<br>
-              • <strong>2-Step Cancellation Verification:</strong> Requires explicit double-confirmation before database commit.<br>
-              • <strong>Code-Computed Policies:</strong> Python strictly calculates 7-day returns, ₹499 shipping, and ₹2,500 COD.</p>
+              <p>• <strong>IDOR Caller Verification:</strong> Verifies order ownership (Priya cannot access Rahul's
+                ORD-102).<br>
+                • <strong>2-Step Cancellation Verification:</strong> Requires explicit double-confirmation before
+                database commit.<br>
+                • <strong>Code-Computed Policies:</strong> Python strictly calculates 7-day returns, ₹499 shipping, and
+                ₹2,500 COD.</p>
             </div>
             <div class="guardrail-card">
               <span class="layer-pill">Layer 4</span>
               <h4>Output Guardrails</h4>
-              <p>• <strong>Audio Speech Filter:</strong> Strips markdown symbols, asterisks, and currency signs (₹) for natural speech.<br>
-              • <strong>Pydantic Schema Validation:</strong> Post-call summaries are strictly validated into typed JSON (<code>CallSummary</code>).<br>
-              • <strong>Zero Data Leakage:</strong> Prevents disclosure of other customer addresses or courier API secrets.</p>
+              <p>• <strong>Audio Speech Filter:</strong> Strips markdown symbols, asterisks, and currency signs (₹) for
+                natural speech.<br>
+                • <strong>Pydantic Schema Validation:</strong> Post-call summaries are strictly validated into typed
+                JSON (<code>CallSummary</code>).<br>
+                • <strong>Zero Data Leakage:</strong> Prevents disclosure of other customer addresses or courier API
+                secrets.</p>
             </div>
           </div>
         </div>
@@ -335,7 +392,8 @@
             <div class="flow-arrow">&darr;</div>
             <div class="flow-step">
               <div class="step-badge">4. Streaming Voice Synthesis</div>
-              <p>Punctuation Sentence Splitter &rarr; Sarvam AI (Shreya, Indian English) &rarr; Binary Audio to Browser</p>
+              <p>Punctuation Sentence Splitter &rarr; Sarvam AI (Shreya, Indian English) &rarr; Binary Audio to Browser
+              </p>
             </div>
             <div class="flow-arrow">&darr;</div>
             <div class="flow-step">
@@ -350,4 +408,5 @@
 
   <script src="/static/app.js?v=3.0"></script>
 </body>
+
 </html>

@@ -247,34 +247,54 @@ class CallSession:
         )
 
         client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY", "").strip())
-        model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip() or "llama-3.3-70b-versatile"
+        configured_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b").strip() or "openai/gpt-oss-20b"
+        candidate_models = [configured_model]
+        for fallback in ["openai/gpt-oss-20b", "llama-3.1-8b-instant", "llama3-8b-8192", "llama-3.3-70b-versatile"]:
+            if fallback not in candidate_models:
+                candidate_models.append(fallback)
 
-        try:
-            resp = await client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": SUMMARY_SYSTEM_PROMPT},
-                    {"role": "user", "content": f"TRANSCRIPT:\n{transcript}"}
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.0,
-                max_tokens=600,
-            )
-            data = json.loads(resp.choices[0].message.content or "{}")
+        resp = None
+        for model_to_try in candidate_models:
+            try:
+                resp = await client.chat.completions.create(
+                    model=model_to_try,
+                    messages=[
+                        {"role": "system", "content": SUMMARY_SYSTEM_PROMPT},
+                        {"role": "user", "content": f"TRANSCRIPT:\n{transcript}"}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.0,
+                    max_tokens=600,
+                )
+                logger.info("Summary generated successfully using model '%s'", model_to_try)
+                break
+            except Exception as e:
+                err_str = str(e)
+                if any(x in err_str.lower() for x in ["model_not_found", "404", "does not exist", "do not have access"]):
+                    logger.warning("Summary model '%s' not available (%s), trying fallback...", model_to_try, e)
+                    continue
+                else:
+                    logger.warning("Summary generation error on model '%s': %s", model_to_try, e)
+                    break
 
-            # Ground order_id: must be one actually looked up during call
-            raw_order = data.get("order_id")
-            if raw_order and raw_order not in self.looked_up_orders:
-                matched = [o for o in self.looked_up_orders if o in str(raw_order)]
-                data["order_id"] = matched[0] if matched else (list(self.looked_up_orders)[0] if self.looked_up_orders else None)
+        if resp and resp.choices and resp.choices[0].message.content:
+            try:
+                data = json.loads(resp.choices[0].message.content or "{}")
 
-            return CallSummary.model_validate(data)
-        except Exception as e:
-            logger.warning("Summary generation error: %s", e)
-            return CallSummary(
-                customer_intent=CustomerIntent.OTHER,
-                order_id=list(self.looked_up_orders)[0] if self.looked_up_orders else None,
-                resolution_status=ResolutionStatus.RESOLVED if user_turns else ResolutionStatus.UNRESOLVED,
-                call_summary="Call completed. Summary could not be extracted automatically.",
-            )
+                # Ground order_id: must be one actually looked up during call
+                raw_order = data.get("order_id")
+                if raw_order and raw_order not in self.looked_up_orders:
+                    matched = [o for o in self.looked_up_orders if o in str(raw_order)]
+                    data["order_id"] = matched[0] if matched else (list(self.looked_up_orders)[0] if self.looked_up_orders else None)
+
+                return CallSummary.model_validate(data)
+            except Exception as e:
+                logger.warning("Error parsing summary JSON: %s", e)
+
+        return CallSummary(
+            customer_intent=CustomerIntent.OTHER,
+            order_id=list(self.looked_up_orders)[0] if self.looked_up_orders else None,
+            resolution_status=ResolutionStatus.RESOLVED if user_turns else ResolutionStatus.UNRESOLVED,
+            call_summary="Call completed. Summary could not be extracted automatically.",
+        )
 

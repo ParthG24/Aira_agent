@@ -16,7 +16,7 @@ logger = logging.getLogger("app.services.agent")
 
 
 class AriaAgent:
-    def __init__(self, api_key: str, model: str = "llama-3.3-70b-versatile"):
+    def __init__(self, api_key: str, model: str = "openai/gpt-oss-20b"):
         self.client = AsyncGroq(api_key=api_key)
         self.model = model
 
@@ -51,20 +51,40 @@ class AriaAgent:
 
         messages = [{"role": "system", "content": system_prompt}] + formatted_history
 
+        FALLBACK_MODELS = ["openai/gpt-oss-20b", "llama-3.1-8b-instant", "llama3-8b-8192", "llama-3.3-70b-versatile"]
+
         for _ in range(3):
             tool_calls_collector = {}
             splitter = SentenceSplitter()
             streamed_text = ""
 
-            stream = await self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                tools=TOOL_SCHEMAS,
-                tool_choice="auto",
-                stream=True,
-                max_tokens=300,
-                temperature=0.1,
-            )
+            stream = None
+            models_to_try = [self.model] + [m for m in FALLBACK_MODELS if m != self.model]
+            for model_candidate in models_to_try:
+                try:
+                    stream = await self.client.chat.completions.create(
+                        model=model_candidate,
+                        messages=messages,
+                        tools=TOOL_SCHEMAS,
+                        tool_choice="auto",
+                        stream=True,
+                        max_tokens=300,
+                        temperature=0.1,
+                    )
+                    if model_candidate != self.model:
+                        logger.info("Switched active agent model to '%s'", model_candidate)
+                        self.model = model_candidate
+                    break
+                except Exception as e:
+                    err_str = str(e)
+                    if any(x in err_str.lower() for x in ["model_not_found", "404", "does not exist", "do not have access"]):
+                        logger.warning("Agent model '%s' unavailable (%s), trying fallback...", model_candidate, e)
+                        continue
+                    raise e
+
+            if stream is None:
+                logger.error("All candidate LLM models failed to stream.")
+                break
 
             async for chunk in stream:
                 choices = getattr(chunk, "choices", None)
@@ -132,7 +152,7 @@ class AriaAgent:
 def get_agent() -> AriaAgent:
     return AriaAgent(
         api_key=os.getenv("GROQ_API_KEY", "").strip(),
-        model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip() or "llama-3.3-70b-versatile"
+        model=os.getenv("GROQ_MODEL", "openai/gpt-oss-20b").strip() or "openai/gpt-oss-20b"
     )
 
 
