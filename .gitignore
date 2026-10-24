@@ -1,0 +1,30 @@
+# Environments
+.env
+.env.local
+.env.*.local
+.venv/
+venv/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Media and cache
+*.wav
+*.mp3
+*.webm
+*.ogg
+pip-cache/
+scratch/
+tmp/
+notes/
+*.zip
