@@ -118,7 +118,7 @@ Open **http://localhost:8000** in your browser and click **Start Call**.
 
 ---
 
-## Section 9: Evaluation Questions & Answers
+### Evaluation Questions & Answers
 
 ### 1. Why did you choose this architecture and tech stack?
 I needed conversational speed without sacrificing business rules. A full-duplex WebSocket lets me stream audio continuously instead of waiting for full recording uploads. Groq gave sub-second inference speeds for Whisper and LLM generation on free-tier, and sentence-level TTS streaming produces audio while the model is still generating. Most importantly, I separated the probabilistic LLM from deterministic Python tools so customer data and policies can never be manipulated.
