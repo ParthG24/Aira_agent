@@ -4,21 +4,43 @@ A real-time, browser-based voice customer support agent built for **Aura Skincar
 
 ---
 
-## Simple Architecture
+## Architecture Overview
 
 ```mermaid
-flowchart LR
-    User([Customer Voice]) <-->|Audio Stream| Browser[Web Browser]
-    Browser <-->|WebSocket /ws/call| Server[FastAPI Backend]
+flowchart TD
+    User([Customer Voice & Audio])
     
-    subgraph Server_Pipeline [Voice & Logic Pipeline]
-        Server --> STT[Groq Whisper STT]
-        STT --> LLM[Groq LLM Reasoning]
-        LLM <--> Tools[Deterministic Python Guardrails & DB]
-        LLM --> TTS[Sarvam AI Voice / Edge-TTS]
+    subgraph Client_Layer ["Client (Browser)"]
+        Mic[Microphone Capture & RMS VAD]
+        AudioPlayer[Audio Queue & Playback]
     end
     
-    TTS --> Browser
+    subgraph Gateway ["Transport Layer"]
+        WS[FastAPI WebSocket /ws/call]
+    end
+    
+    subgraph Server_Pipeline ["Backend Voice Pipeline"]
+        STT[STT: Groq Whisper Large v3]
+        SessionMgr[Session Manager & Inactivity Watcher]
+        LLM[Agent Reasoning: Groq gpt-oss-20b]
+        Tools[Deterministic Tools & Guardrails]
+        BrandDB[(Aura Skincare Policy & Mock DB)]
+        TTS[TTS: Sarvam AI Shreya / Edge-TTS]
+        Summary[Post-Call Summary: Pydantic JSON]
+    end
+    
+    User <-->|Mic Input| Mic
+    AudioPlayer -->|Spoken Audio| User
+    Mic -->|Binary PCM Audio| WS
+    WS -->|Audio Chunks| AudioPlayer
+    WS <--> SessionMgr
+    SessionMgr --> STT
+    STT --> LLM
+    LLM <--> Tools
+    Tools <--> BrandDB
+    LLM --> TTS
+    TTS --> WS
+    SessionMgr -.->|On Call End| Summary
 ```
 
 ### The Core Principle: "Never Trust the LLM"
@@ -94,13 +116,13 @@ Open **http://localhost:8000** in your browser and click **Start Call**.
 ## Section 9: Evaluation Questions & Answers
 
 ### 1. Why did you choose this architecture and tech stack?
-I wanted the agent to respond quickly and feel like a real conversation. WebSockets let me send audio and messages through one connection, Groq gives fast responses, and streaming TTS (Sarvam AI / Edge-TTS) converts replies into speech while the AI is still generating them. I also added a backup speech system in case the main one fails.
+I needed conversational speed without sacrificing business rules. A full-duplex WebSocket lets me stream audio continuously instead of waiting for full recording uploads. Groq gave sub-second inference speeds for Whisper and LLM generation on free-tier, and sentence-level TTS streaming produces audio while the model is still generating. Most importantly, I separated the probabilistic LLM from deterministic Python tools so customer data and policies can never be manipulated.
 
 ### 2. What was the most difficult part and how did you solve it?
-The hardest part was handling interruptions while the AI was speaking. I had to coordinate the browser's audio capture, playback queue, WebSocket, and backend tasks. I added calibrated VAD checks to avoid cancelling speech due to small background noises. When interrupted, the client stops audio immediately and tells the server to cancel the task. I also made sure only sentences actually sent to the client are saved in the conversation history.
+The hardest engineering challenge was real-time barge-in without telephony hardware. When a customer interrupts mid-sentence, three things must happen simultaneously: the browser audio buffer must dump instantly, the server must cancel its running async LLM and TTS tasks, and the conversation history must be pruned so the model only remembers words the customer actually heard. I solved this by tracking audio packet IDs and implementing a clean cancellation signal over the WebSocket.
 
 ### 3. If you had one more week, what would you improve first and why?
-I'd improve speech recognition first by moving it to the server using Silero VAD and Whisper or Deepgram with WebRTC. This would improve browser compatibility and make interruptions even more responsive. After that, I'd add an expanded product knowledge base for skincare questions and improve echo cancellation to avoid false interruptions.
+First, I'd upgrade the transport from raw WebSockets to WebRTC (like LiveKit). WebRTC handles jitter, packet loss, and echo cancellation natively, making voice much smoother on mobile networks. Second, I'd add a RAG knowledge base for ingredient recommendations so Aria could answer specific routine questions (like layering Vitamin C with Retinol) while keeping return and cancellation rules strictly deterministic.
 
 ### 4. What would need to change if the agent handled 1,000 conversations a day?
-I'd move session data to Redis, use PostgreSQL for order management with row-level locking on cancellations, and add fallback LLM providers if Groq hits rate limits. I'd cache common responses to reduce TTS latency, add monitoring to track errors and response times, and mask personal information in transcripts to improve privacy and comply with applicable data protection requirements.
+First, session state would move from local memory to Redis, and mock data would become PostgreSQL with row-level locks so simultaneous requests can't double-cancel an order. Second, I'd add multi-provider fallbacks (e.g. Together.ai / OpenAI) to absorb Groq rate limits. Finally, I'd add caller ID verification with SMS OTP before disclosing order details, and mask PII (names, phone numbers) before logging transcripts.
