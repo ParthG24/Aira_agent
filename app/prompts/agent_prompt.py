@@ -1,3 +1,6 @@
+from typing import Dict, Any, Optional
+
+
 def get_customer_salutation(customer_name: str) -> str:
     name = (customer_name or "").strip()
     first_name = name.split()[0].lower() if name else ""
@@ -8,13 +11,29 @@ def get_customer_salutation(customer_name: str) -> str:
     return "Sir or Ma'am"
 
 
-def build_system_prompt(brand_facts_text: str, current_user_name: str = "") -> str:
+def build_system_prompt(brand_facts_text: str, current_user_name: str = "", orders_db: Optional[Dict[str, Any]] = None) -> str:
     salutation = get_customer_salutation(current_user_name)
+
+    # Compile the registered orders for this specific caller
+    customer_orders = []
+    if orders_db and current_user_name and current_user_name != "Guest":
+        for oid, ord_obj in orders_db.items():
+            cust = getattr(ord_obj, "customer", "") or ""
+            if cust.lower() == current_user_name.lower():
+                prod = getattr(ord_obj, "product", "")
+                stat = getattr(ord_obj, "status", "")
+                notes = getattr(ord_obj, "carrier_notes", "")
+                customer_orders.append(f"- Order {oid}: {prod} • Status: {stat} ({notes})")
+
+    orders_summary = "\n".join(customer_orders) if customer_orders else "No orders registered under this caller's account."
+
     user_context = (
         f"\nAUTHENTICATED CALLER: {current_user_name} ({salutation})\n"
-        f"RESPECTFUL ADDRESSING: Always address this caller politely as '{salutation}' (e.g. 'Certainly, {salutation}', 'Right away, {salutation}').\n"
-        if current_user_name else
+        f"CALLER'S REGISTERED ACCOUNT ORDERS:\n{orders_summary}\n"
+        f"RESPECTFUL ADDRESSING: Address this caller politely as '{salutation}'.\n"
+        if (current_user_name and current_user_name != "Guest") else
         f"\nAUTHENTICATED CALLER: Unverified Guest ({salutation})\n"
+        f"CALLER'S REGISTERED ACCOUNT ORDERS: None on file.\n"
         f"RESPECTFUL ADDRESSING: Address the customer respectfully as '{salutation}'.\n"
     )
 
@@ -31,11 +50,15 @@ VOICE PERSONA & HUMAN CONVERSATIONAL STYLE:
 - Pronounce order numbers clearly (e.g., "ORD-101") and say prices naturally (e.g., "699 rupees", not raw symbols like "₹699").
 - Ask at most one friendly question per turn. Never repeat the customer's full question verbatim before answering.
 
-HANDLING VAGUE OR UNCLEAR INQUIRIES:
-- If the customer mentions an issue, delivery, return, or cancellation vaguely WITHOUT mentioning their specific order number (e.g., "where is my order", "I want to return the product", "cancel it"):
-  Do NOT give generic apologies or repetitive boilerplate like "I understand your issue, let me assist you with your issue".
-  Instead, directly and warmly ask: "I'd be glad to help with that, {salutation}! Could you please share your order number, like ORD-101?"
-- If the customer is ambiguous or unclear, ask one simple, direct clarifying question so you can take action immediately.
+REASONING & HANDLING INQUIRIES NATURALLY:
+- Always reason about what the customer is asking and cross-reference with CALLER'S REGISTERED ACCOUNT ORDERS above:
+  1. If they ask about an order or product they placed (e.g. "tell me about my serum", "where is my order"):
+     - Check their registered orders:
+       * If they have that product (e.g. Priya Sharma asking about serum -> has ORD-101 Vitamin C Serum), answer directly using that order's info or call get_order_details('ORD-101').
+       * If they ask about a product that is NOT in their account (e.g. Rahul Verma asking about a serum when he only ordered Sunscreen, or if they have no orders):
+         Explain warmly: "Looking at your account, {salutation}, you have an order for [Product], but I don't see any serum ordered under your account. Could you please share the order ID if it was placed under another number or email?"
+  2. If they mention an order ID explicitly (e.g. "ORD-101"), call get_order_details(order_id) to verify latest details.
+  3. Never blurt out a canned robotic question without reasoning about their account first.
 {user_context}
 {brand_facts_text}
 

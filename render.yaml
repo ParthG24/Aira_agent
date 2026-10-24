@@ -12,6 +12,6 @@ services:
       - key: SARVAM_API_KEY
         sync: false
       - key: GROQ_MODEL
-        value: openai/gpt-oss-20b
+        value: llama-3.3-70b-versatile
       - key: PORT
         value: 8000

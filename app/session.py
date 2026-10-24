@@ -247,7 +247,7 @@ class CallSession:
         )
 
         client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY", "").strip())
-        model = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b").strip() or "openai/gpt-oss-20b"
+        model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip() or "llama-3.3-70b-versatile"
 
         try:
             resp = await client.chat.completions.create(

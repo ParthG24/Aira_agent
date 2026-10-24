@@ -16,7 +16,7 @@ logger = logging.getLogger("app.services.agent")
 
 
 class AriaAgent:
-    def __init__(self, api_key: str, model: str = "openai/gpt-oss-20b"):
+    def __init__(self, api_key: str, model: str = "llama-3.3-70b-versatile"):
         self.client = AsyncGroq(api_key=api_key)
         self.model = model
 
@@ -28,7 +28,11 @@ class AriaAgent:
         current_customer: Optional[str] = None,
         session_state: Optional[Any] = None
     ) -> AsyncGenerator[Dict[str, Any], None]:
-        system_prompt = build_system_prompt(get_brand_facts_text(), current_user_name=current_customer or "")
+        system_prompt = build_system_prompt(
+            get_brand_facts_text(),
+            current_user_name=current_customer or "",
+            orders_db=orders_db
+        )
         
         # Guardrail: Delimit untrusted customer speech inputs to prevent prompt injection
         formatted_history = []
@@ -128,7 +132,7 @@ class AriaAgent:
 def get_agent() -> AriaAgent:
     return AriaAgent(
         api_key=os.getenv("GROQ_API_KEY", "").strip(),
-        model=os.getenv("GROQ_MODEL", "openai/gpt-oss-20b").strip() or "openai/gpt-oss-20b"
+        model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip() or "llama-3.3-70b-versatile"
     )
 
 
