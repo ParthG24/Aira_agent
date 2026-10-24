@@ -164,14 +164,14 @@ async function startAudioCapture() {
       if (!isSpeakingUtterance) consecutiveSpeechFrames = 0;
     }
 
-    // Calibrated human voice threshold (0.009) with sensitive barge-in (0.015)
-    const threshold = isSpeakingNow ? 0.015 : (inCooldown ? 0.012 : 0.009);
+    // Calibrated human voice threshold (0.010) with echo-safe barge-in (0.026)
+    const threshold = isSpeakingNow ? 0.026 : (inCooldown ? 0.016 : 0.010);
     const pcm16Chunk = downsampleTo16k(inputData, audioCtx.sampleRate);
 
     if (rms > threshold) {
       consecutiveSpeechFrames++;
-      // Fast trigger on 1 frame for barge-in, 2 frames for normal speech (~80ms)
-      const minFrames = isSpeakingNow ? 1 : 2;
+      // Require 2 frames (~80ms) to avoid single audio spikes or speaker echo triggering barge-in
+      const minFrames = 2;
       if (consecutiveSpeechFrames >= minFrames) {
         silenceSamples = 0;
         if (!isSpeakingUtterance) {
@@ -215,8 +215,9 @@ function dispatchUtterance() {
     }
   }
 
-  // Allow short words like "yes", "no", "hi", "confirm" while dropping pure mic clicks (< 200ms or amplitude < 180)
-  if (totalLen < 3200 || maxAbs < 180) {
+  // Filter out silence, background hiss, or tiny noises (< 250ms or max amplitude < 450)
+  // Human speech easily exceeds 1200+ amplitude, while room noise stays under 400
+  if (totalLen < 3800 || maxAbs < 450) {
     audioBufferAccumulator = [];
     return;
   }

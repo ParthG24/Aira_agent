@@ -42,6 +42,12 @@ def pcm16_to_wav(pcm_bytes: bytes, sample_rate: int = 16000) -> bytes:
     return buf.getvalue()
 
 
+PROMPT_HALLUCINATIONS = {
+    "skincare customer support", "order tracking, returns", "customer support, order",
+    "returns, cancellation", "order tracking", "customer support", "returns, or"
+}
+
+
 class GroqSTT:
     def __init__(self, api_key: str, model: Optional[str] = None):
         from groq import AsyncGroq
@@ -54,13 +60,23 @@ class GroqSTT:
         if not pcm_bytes or len(pcm_bytes) < 4000:
             return False, ""
 
+        # Pre-check audio energy: discard near-silent audio chunks / room hiss before calling API
+        try:
+            import audioop
+            rms = audioop.rms(pcm_bytes, 2)
+            if rms < 250:
+                logger.debug("Discarding near-silent audio packet (RMS=%d)", rms)
+                return False, ""
+        except Exception:
+            pass
+
         wav_bytes = pcm16_to_wav(pcm_bytes, 16000)
         try:
             resp = await self.client.audio.transcriptions.create(
                 file=("audio.wav", wav_bytes, "audio/wav"),
                 model=self.model,
                 response_format="verbose_json",
-                prompt="Aura Skincare customer support, order tracking, returns, cancellation, ORD-101, ORD-102, ORD-103",
+                prompt="Aria Aura Skincare ORD-101 ORD-102 ORD-103",
                 temperature=0.0,
             )
 
@@ -78,6 +94,12 @@ class GroqSTT:
             normalized_clean = clean_text.lower().strip(".!?, ")
             if normalized_clean in DISCARD_STANDALONE or clean_text.lower() in DISCARD_STANDALONE:
                 logger.info("Discarding standalone Whisper hallucination: '%s'", clean_text)
+                return False, ""
+
+            # Filter out prompt echoing hallucinations
+            lower_clean = clean_text.lower()
+            if any(ph in lower_clean for ph in PROMPT_HALLUCINATIONS):
+                logger.info("Discarding Whisper prompt echo hallucination: '%s'", clean_text)
                 return False, ""
 
             # Filter out very short junk outputs (e.g. single letters)

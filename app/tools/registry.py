@@ -42,7 +42,7 @@ def execute_get_order_details(
             "found": True,
             "authorized": False,
             "order_id": clean_id,
-            "message": f"Authorization error: Order {clean_id} belongs to another customer ({order.customer}). You are authenticated as '{current_customer}'. For privacy, I cannot share details."
+            "message": f"Order {clean_id} belongs to another customer and is not associated with {current_customer}'s account. Tell the customer warmly: 'Your account doesn't have an order with ID {clean_id}. For privacy, I can only look up orders placed under your own account.'"
         }
 
     return {
