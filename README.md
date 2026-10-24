@@ -29,6 +29,10 @@ flowchart TD
         Summary[Post-Call Summary: Pydantic JSON]
     end
     
+    subgraph Storage_Future ["Future Persistence"]
+        CRMDB[(PostgreSQL / CRM Database)]
+    end
+    
     User <-->|Mic Input| Mic
     AudioPlayer -->|Spoken Audio| User
     Mic -->|Binary PCM Audio| WS
@@ -41,6 +45,7 @@ flowchart TD
     LLM --> TTS
     TTS --> WS
     SessionMgr -.->|On Call End| Summary
+    Summary -.->|Future: Auto-Store Summary & Logs| CRMDB
 ```
 
 ### The Core Principle: "Never Trust the LLM"
@@ -70,7 +75,7 @@ flowchart TD
 * **Real-Time Barge-In (Interruption):** If the customer speaks while Aria is speaking, playback cuts off instantly and the server stops the current turn.
 * **10-Second Silence Detection:** After Aria finishes speaking, a 10-second timer starts. If the user is silent, Aria asks if they are still there (*"Take your time, Ma'am!"*). After another 10 seconds of silence, she gracefully ends the call.
 * **Natural Indian Voice:** Uses Sarvam AI (`bulbul:v3`, voice *Shreya*) with automatic fallback to Edge-TTS (`en-IN-NeerjaNeural`).
-* **Post-Call Structured Summary:** When the call ends, the backend generates an enum-validated JSON summary (`customer_intent`, `order_id`, `resolution_status`, `call_summary`) validated by Pydantic.
+* **Post-Call Structured Summary:** When the call ends, the backend generates an enum-validated JSON summary (`customer_intent`, `order_id`, `resolution_status`, `call_summary`) validated by Pydantic — ready to be stored directly into a PostgreSQL database or CRM.
 
 ---
 
