@@ -124,7 +124,7 @@ async function startAudioCapture() {
         channelCount: 1,
         echoCancellation: true,
         noiseSuppression: true,
-        autoGainControl: true,
+        autoGainControl: false, // Prevents browser from boosting background room noise during quiet periods
       },
     });
   } catch (err) {
@@ -164,14 +164,16 @@ async function startAudioCapture() {
       if (!isSpeakingUtterance) consecutiveSpeechFrames = 0;
     }
 
-    // Calibrated human voice threshold (0.010) with echo-safe barge-in (0.026)
-    const threshold = isSpeakingNow ? 0.026 : (inCooldown ? 0.016 : 0.010);
+    // Robust noise-immune thresholds:
+    // - During Aria playback (isSpeakingNow): requires deliberate human voice (0.045) for 4 frames (~170ms)
+    // - During echo cooldown: 0.028
+    // - Normal listening: 0.018 for 3 frames (~125ms) — ignores laptop fan, typing, and ambient room noise
+    const threshold = isSpeakingNow ? 0.045 : (inCooldown ? 0.028 : 0.018);
+    const minFrames = isSpeakingNow ? 4 : 3;
     const pcm16Chunk = downsampleTo16k(inputData, audioCtx.sampleRate);
 
     if (rms > threshold) {
       consecutiveSpeechFrames++;
-      // Require 2 frames (~80ms) to avoid single audio spikes or speaker echo triggering barge-in
-      const minFrames = 2;
       if (consecutiveSpeechFrames >= minFrames) {
         silenceSamples = 0;
         if (!isSpeakingUtterance) {
