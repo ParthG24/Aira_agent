@@ -94,25 +94,13 @@ Open **http://localhost:8000** in your browser and click **Start Call**.
 ## Section 9: Evaluation Questions & Answers
 
 ### 1. Why did you choose this architecture and tech stack?
-* **FastAPI + WebSockets:** Ultra-low latency full-duplex communication for streaming audio and control signals.
-* **Groq Whisper + Groq LLM (`gpt-oss-20b`):** Sub-second response times necessary for realistic voice conversations on free-tier infrastructure.
-* **Sarvam AI (with Edge-TTS fallback):** High-quality natural Indian English pronunciation with zero-downtime fallback.
-* **Deterministic Python Layer:** Keeps business logic, calculations, and security checks completely separate from the probabilistic LLM.
+I wanted the agent to respond quickly and feel like a real conversation. WebSockets let me send audio and messages through one connection, Groq gives fast responses, and streaming TTS (Sarvam AI / Edge-TTS) converts replies into speech while the AI is still generating them. I also added a backup speech system in case the main one fails.
 
 ### 2. What was the most difficult part and how did you solve it?
-* **Audio Loopback & Echo:** Laptop speakers can feed back into the microphone, causing the agent to interrupt herself or loop endlessly.
-* **Solution:** 
-  1. Client-side audio feedback suppression in Web Audio API.
-  2. Dynamic VAD thresholds (higher threshold while agent speaks).
-  3. Whisper hallucination filters in STT to ignore low-confidence phantom audio.
+The hardest part was handling interruptions while the AI was speaking. I had to coordinate the browser's audio capture, playback queue, WebSocket, and backend tasks. I added calibrated VAD checks to avoid cancelling speech due to small background noises. When interrupted, the client stops audio immediately and tells the server to cancel the task. I also made sure only sentences actually sent to the client are saved in the conversation history.
 
-### 3. If you had one more week, what would you improve?
-1. **WebRTC:** Upgrade from WebSockets to WebRTC (via LiveKit or aiortc) for better packet loss handling and lower latency on mobile networks.
-2. **Fuzzy Order ID Matching:** Use phonetic algorithms (Soundex / Levenshtein) so that order IDs transcribed with minor typos (e.g. "ward 101" instead of "ORD-101") are automatically resolved.
-3. **Multi-Turn Slot Filling:** Add explicit state machine tracking for complex multi-step return/exchange requests.
+### 3. If you had one more week, what would you improve first and why?
+I'd improve speech recognition first by moving it to the server using Silero VAD and Whisper or Deepgram with WebRTC. This would improve browser compatibility and make interruptions even more responsive. After that, I'd add an expanded product knowledge base for skincare questions and improve echo cancellation to avoid false interruptions.
 
-### 4. What would need to change for 1,000 conversations a day?
-1. **Database & Concurrency:** Move from mock memory dictionaries to PostgreSQL with row-level locks on cancellations to prevent race conditions.
-2. **Caller Authentication:** Add caller ID lookup with SMS OTP verification before accessing private customer data.
-3. **Horizontal Scaling:** Deploy FastAPI across container instances with Redis for shared session state and WebSocket handling.
-4. **Observability:** Track latency metrics (Time-to-First-Audio), tool call accuracy, and error rates using Datadog or Langfuse.
+### 4. What would need to change if the agent handled 1,000 conversations a day?
+I'd move session data to Redis, use PostgreSQL for order management with row-level locking on cancellations, and add fallback LLM providers if Groq hits rate limits. I'd cache common responses to reduce TTS latency, add monitoring to track errors and response times, and mask personal information in transcripts to improve privacy and comply with applicable data protection requirements.
