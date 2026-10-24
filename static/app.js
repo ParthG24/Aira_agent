@@ -27,7 +27,7 @@ let callTimerInterval = null;
 let callStartTimestamp = 0;
 
 const SAMPLE_RATE = 16000;
-const SILENCE_LIMIT_SAMPLES = SAMPLE_RATE * 1.0; // 1.0 second pause window for natural human pauses
+const SILENCE_LIMIT_SAMPLES = Math.round(SAMPLE_RATE * 0.8); // 800ms natural conversational pause
 
 // DOM Elements
 const btnStart = document.getElementById("btnStartCall");
@@ -139,7 +139,7 @@ async function startAudioCapture() {
 
   scriptProcessor.onaudioprocess = (e) => {
     e.outputBuffer.getChannelData(0).fill(0); // Prevent feedback loop to speakers
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (currentState === "idle" || !ws || ws.readyState !== WebSocket.OPEN) return;
 
     const inputData = e.inputBuffer.getChannelData(0);
     let sum = 0;
@@ -164,14 +164,14 @@ async function startAudioCapture() {
       if (!isSpeakingUtterance) consecutiveSpeechFrames = 0;
     }
 
-    // Calibrated human voice threshold (0.010) with sensitive barge-in (0.016)
-    const threshold = isSpeakingNow ? 0.016 : (inCooldown ? 0.013 : 0.010);
+    // Calibrated human voice threshold (0.009) with sensitive barge-in (0.015)
+    const threshold = isSpeakingNow ? 0.015 : (inCooldown ? 0.012 : 0.009);
     const pcm16Chunk = downsampleTo16k(inputData, audioCtx.sampleRate);
 
     if (rms > threshold) {
       consecutiveSpeechFrames++;
-      // Immediate barge-in on 1 frame when agent is speaking; 3 frames for clean listening
-      const minFrames = isSpeakingNow ? 1 : 3;
+      // Fast trigger on 1 frame for barge-in, 2 frames for normal speech (~80ms)
+      const minFrames = isSpeakingNow ? 1 : 2;
       if (consecutiveSpeechFrames >= minFrames) {
         silenceSamples = 0;
         if (!isSpeakingUtterance) {
@@ -194,14 +194,17 @@ async function startAudioCapture() {
         }
       } else if (!isSpeakingNow && !inCooldown) {
         preRollBuffer.push(pcm16Chunk);
-        if (preRollBuffer.length > 8) preRollBuffer.shift();
+        if (preRollBuffer.length > 16) preRollBuffer.shift(); // 16 chunks = ~650ms cushion
       }
     }
   };
 }
 
 function dispatchUtterance() {
-  if (audioBufferAccumulator.length === 0) return;
+  if (currentState === "idle" || audioBufferAccumulator.length === 0) {
+    audioBufferAccumulator = [];
+    return;
+  }
 
   let totalLen = 0, maxAbs = 0;
   for (const arr of audioBufferAccumulator) {
@@ -212,8 +215,8 @@ function dispatchUtterance() {
     }
   }
 
-  // Filter out tiny clicks, breathing, or silence (< 400ms or amplitude < 250)
-  if (totalLen < 6400 || maxAbs < 250) {
+  // Allow short words like "yes", "no", "hi", "confirm" while dropping pure mic clicks (< 200ms or amplitude < 180)
+  if (totalLen < 3200 || maxAbs < 180) {
     audioBufferAccumulator = [];
     return;
   }
@@ -226,7 +229,7 @@ function dispatchUtterance() {
   }
   audioBufferAccumulator = [];
 
-  if (ws && ws.readyState === WebSocket.OPEN) {
+  if (currentState !== "idle" && ws && ws.readyState === WebSocket.OPEN) {
     ws.send(merged.buffer);
   }
 }
@@ -298,9 +301,9 @@ function appendTranscript(role, text) {
   const emptyState = transcriptFeed.querySelector(".empty-state");
   if (emptyState) emptyState.remove();
 
-  // If previous bubble is from same role, append text smoothly
+  // If previous bubble is from assistant, append streamed sentences smoothly
   const lastBubble = transcriptFeed.lastElementChild;
-  if (lastBubble && lastBubble.classList.contains(role) && lastBubble.classList.contains("chat-row")) {
+  if (role === "assistant" && lastBubble && lastBubble.classList.contains("assistant") && lastBubble.classList.contains("chat-row")) {
     const textEl = lastBubble.querySelector(".bubble-text");
     if (textEl && !textEl.textContent.endsWith(text)) {
       textEl.textContent += " " + text;
@@ -363,11 +366,19 @@ async function connectWebSocket() {
         appendTranscript(msg.role, msg.text);
       } else if (msg.type === "summary") {
         showSummaryModal(msg.data);
+      } else if (msg.type === "call_ended") {
+        cleanupAudio();
+        stopTimer();
+        setState("idle");
+        btnStart.disabled = false;
+        btnEnd.disabled = true;
       } else if (msg.type === "error") {
         console.warn("Server message:", msg.message);
       }
     } else if (event.data instanceof ArrayBuffer) {
-      queueAudioPlayback(event.data);
+      if (currentState !== "idle") {
+        queueAudioPlayback(event.data);
+      }
     }
   };
 
@@ -396,11 +407,38 @@ function stopTimer() {
 }
 
 function cleanupAudio() {
-  if (micStream) micStream.getTracks().forEach((t) => t.stop());
-  if (scriptProcessor) try { scriptProcessor.disconnect(); } catch (e) {}
-  if (micSource) try { micSource.disconnect(); } catch (e) {}
+  isSpeakingUtterance = false;
+  audioBufferAccumulator = [];
+  preRollBuffer = [];
+  consecutiveSpeechFrames = 0;
+  silenceSamples = 0;
+
+  if (micStream) {
+    micStream.getTracks().forEach((t) => {
+      try { t.stop(); } catch (e) {}
+    });
+    micStream = null;
+  }
+  if (scriptProcessor) {
+    try {
+      scriptProcessor.onaudioprocess = null;
+      scriptProcessor.disconnect();
+    } catch (e) {}
+    scriptProcessor = null;
+  }
+  if (micSource) {
+    try { micSource.disconnect(); } catch (e) {}
+    micSource = null;
+  }
   audioQueue = [];
   isPlayingAudio = false;
+  if (currentSourceNode) {
+    try {
+      currentSourceNode.stop();
+      currentSourceNode.disconnect();
+    } catch (e) {}
+    currentSourceNode = null;
+  }
 }
 
 function showSummaryModal(summaryData) {
@@ -420,6 +458,11 @@ function showSummaryModal(summaryData) {
 // --- Event Listeners ---
 btnStart.addEventListener("click", () => connectWebSocket());
 btnEnd.addEventListener("click", () => {
+  cleanupAudio();
+  stopTimer();
+  setState("idle");
+  btnStart.disabled = false;
+  btnEnd.disabled = true;
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type: "end_call" }));
   }

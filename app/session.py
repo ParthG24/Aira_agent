@@ -133,6 +133,8 @@ class CallSession:
         await self.send_json({"type": "state", "state": "listening"})
 
     async def handle_user_text(self, text: str):
+        if not self.is_active:
+            return
         clean = text.strip()
         if not clean:
             return
@@ -144,16 +146,21 @@ class CallSession:
         self.current_turn_task = asyncio.create_task(self._run_agent_turn())
 
     async def handle_audio_bytes(self, pcm_bytes: bytes):
-        if len(pcm_bytes) > 1024 * 1024 or self.is_greeting:
+        if not self.is_active or len(pcm_bytes) > 1024 * 1024 or self.is_greeting:
             return
         is_speech, text = await self.stt.transcribe(pcm_bytes)
+        if not self.is_active:
+            return
         if is_speech and text:
             self.reset_silence_timer()
             await self.handle_user_text(text)
         else:
-            await self.send_json({"type": "state", "state": "listening"})
+            if self.is_active:
+                await self.send_json({"type": "state", "state": "listening"})
 
     async def handle_barge_in(self):
+        if not self.is_active:
+            return
         logger.info("Barge-in triggered; cancelling current speech turn")
         self.reset_silence_timer()
         self.cancel_active_turn()
@@ -173,6 +180,7 @@ class CallSession:
         except Exception as e:
             logger.error("Error generating or sending summary: %s", e)
         await self.send_json({"type": "state", "state": "idle"})
+        await self.send_json({"type": "call_ended"})
 
     async def _run_agent_turn(self, is_greeting: bool = False):
         await self.send_json({"type": "state", "state": "thinking"})

@@ -26,7 +26,7 @@ DISCARD_STANDALONE = {
 def clean_trailing_hallucinations(text: str) -> str:
     """Removes trailing dangling hallucinations like '... the' or repetitive filler tokens."""
     words = text.split()
-    if len(words) > 1 and words[-1].lower().strip(".!?,") in {"the", "uh", "um", "you"}:
+    if len(words) > 1 and words[-1].lower().strip(".!?,") in {"the", "uh", "um"}:
         return " ".join(words[:-1]).strip()
     return text
 
@@ -50,8 +50,8 @@ class GroqSTT:
 
     async def transcribe(self, pcm_bytes: bytes) -> Tuple[bool, str]:
         """Transcribes PCM audio with acoustic & hallucination guardrails."""
-        # Require at least 350ms of audio (5600 samples at 16kHz = 11200 bytes)
-        if not pcm_bytes or len(pcm_bytes) < 5600:
+        # Require at least 250ms of audio (4000 samples at 16kHz = 8000 bytes)
+        if not pcm_bytes or len(pcm_bytes) < 4000:
             return False, ""
 
         wav_bytes = pcm16_to_wav(pcm_bytes, 16000)
@@ -74,33 +74,33 @@ class GroqSTT:
                 logger.debug("Discarding empty or noise transcription: '%s'", clean_text)
                 return False, ""
 
-            # Discard standalone fillers & common Whisper noise hallucinations (e.g. 'The', 'The.', 'uh')
+            # Discard standalone noise fillers & hallucinations
             normalized_clean = clean_text.lower().strip(".!?, ")
             if normalized_clean in DISCARD_STANDALONE or clean_text.lower() in DISCARD_STANDALONE:
                 logger.info("Discarding standalone Whisper hallucination: '%s'", clean_text)
                 return False, ""
 
-            # Filter out very short junk outputs (e.g. single letters or 2-letter noise)
+            # Filter out very short junk outputs (e.g. single letters)
             alnums = [c for c in clean_text if c.isalnum()]
-            if len(alnums) < 3 and clean_text.lower() not in {"hi", "no", "ok"}:
-                logger.debug("Discarding too-short acoustic artifact: '%s'", clean_text)
+            if len(alnums) < 2:
+                logger.debug("Discarding single-letter acoustic artifact: '%s'", clean_text)
                 return False, ""
 
             if clean_text.lower() in UNCONDITIONAL_HALLUCINATIONS:
                 logger.debug("Discarding unconditional Whisper hallucination: '%s'", clean_text)
                 return False, ""
 
-            # Tighten no_speech_prob: discard if Whisper believes it's likely non-speech
-            if no_speech_prob and no_speech_prob > 0.50:
+            # Discard if Whisper is confident it's non-speech (>0.85)
+            if no_speech_prob and no_speech_prob > 0.85:
                 logger.debug("Discarding audio due to high no_speech_prob (%.3f): '%s'", no_speech_prob, clean_text)
                 return False, ""
 
-            # Discard low-confidence transcripts prone to hallucinating on background hum
-            if avg_logprob and avg_logprob < -1.15:
+            # Discard severely degraded low-confidence audio prone to phantom hallucinations
+            if avg_logprob and avg_logprob < -1.80:
                 logger.debug("Discarding audio due to low avg_logprob (%.3f): '%s'", avg_logprob, clean_text)
                 return False, ""
 
-            if clean_text.lower() in SHORT_FILLERS and no_speech_prob and no_speech_prob > 0.35:
+            if clean_text.lower() in SHORT_FILLERS and no_speech_prob and no_speech_prob > 0.65:
                 logger.debug("Discarding short filler without confident speech: '%s'", clean_text)
                 return False, ""
 
