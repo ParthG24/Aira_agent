@@ -15,6 +15,7 @@ let currentCustomer = "Priya Sharma"; // Active authenticated user
 let audioQueue = [];
 let isPlayingAudio = false;
 let currentSourceNode = null;
+let serverTurnPending = false; // True while server is generating and streaming audio for an active turn
 
 let isSpeakingUtterance = false;
 let audioBufferAccumulator = [];
@@ -124,7 +125,7 @@ async function startAudioCapture() {
         channelCount: 1,
         echoCancellation: true,
         noiseSuppression: true,
-        autoGainControl: false, // Prevents browser from boosting background room noise during quiet periods
+        autoGainControl: true,
       },
     });
   } catch (err) {
@@ -164,12 +165,13 @@ async function startAudioCapture() {
       if (!isSpeakingUtterance) consecutiveSpeechFrames = 0;
     }
 
-    // Robust noise-immune thresholds:
-    // - During Aria playback (isSpeakingNow): requires deliberate human voice (0.045) for 4 frames (~170ms)
-    // - During echo cooldown: 0.028
-    // - Normal listening: 0.018 for 3 frames (~125ms) — ignores laptop fan, typing, and ambient room noise
-    const threshold = isSpeakingNow ? 0.045 : (inCooldown ? 0.028 : 0.018);
-    const minFrames = isSpeakingNow ? 4 : 3;
+    // Calibrated VAD:
+    // - During Aria playback (barge-in): 0.030 threshold on 2 frames (~80ms).
+    //   Safely ignores speaker audio bleed (0.015-0.022), but triggers reliably on deliberate human voice.
+    // - During echo cooldown: 0.022
+    // - Normal listening: 0.015 on 2 frames (~80ms) — ignores quiet background noise while catching conversational speech.
+    const threshold = isSpeakingNow ? 0.030 : (inCooldown ? 0.022 : 0.015);
+    const minFrames = 2;
     const pcm16Chunk = downsampleTo16k(inputData, audioCtx.sampleRate);
 
     if (rms > threshold) {
@@ -217,9 +219,8 @@ function dispatchUtterance() {
     }
   }
 
-  // Filter out silence, background hiss, or tiny noises (< 250ms or max amplitude < 450)
-  // Human speech easily exceeds 1200+ amplitude, while room noise stays under 400
-  if (totalLen < 3800 || maxAbs < 450) {
+  // Filter out tiny clicks or room noise (< 200ms or amplitude < 260)
+  if (totalLen < 3200 || maxAbs < 260) {
     audioBufferAccumulator = [];
     return;
   }
@@ -233,13 +234,15 @@ function dispatchUtterance() {
   audioBufferAccumulator = [];
 
   if (currentState !== "idle" && ws && ws.readyState === WebSocket.OPEN) {
+    serverTurnPending = true;
     ws.send(merged.buffer);
   }
 }
 
 // --- Barge-in & Playback Handling ---
 function handleClientBargeIn() {
-  echoCooldownUntil = Date.now() + 500;
+  serverTurnPending = false;
+  echoCooldownUntil = Date.now() + 350;
   stopAudioPlayback();
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type: "barge_in" }));
@@ -276,7 +279,8 @@ function playNextInQueue() {
     isPlayingAudio = false;
     currentSourceNode = null;
     if (currentState === "speaking") setState("listening");
-    if (wasSpeaking && ws && ws.readyState === WebSocket.OPEN) {
+    // Strictly send playback_done ONLY when server has sent all speech for this turn AND playback finished
+    if (wasSpeaking && !serverTurnPending && ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: "playback_done" }));
     }
     return;
@@ -369,6 +373,11 @@ async function connectWebSocket() {
         appendTranscript(msg.role, msg.text);
       } else if (msg.type === "summary") {
         showSummaryModal(msg.data);
+      } else if (msg.type === "turn_complete") {
+        serverTurnPending = false;
+        if (!isPlayingAudio && audioQueue.length === 0 && ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "playback_done" }));
+        }
       } else if (msg.type === "call_ended") {
         cleanupAudio();
         stopTimer();

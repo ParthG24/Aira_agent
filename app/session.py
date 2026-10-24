@@ -55,15 +55,16 @@ class CallSession:
         if self.silence_task and not self.silence_task.done():
             self.silence_task.cancel()
         self.silence_task = None
-        if not self.is_active:
+        # Strict guard: never start silence timer while agent is greeting or processing/speaking a turn
+        if not self.is_active or self.is_greeting or (self.current_turn_task and not self.current_turn_task.done()):
             return
         self.silence_task = asyncio.create_task(self._silence_flow())
 
     async def _silence_flow(self):
         try:
-            # Count exactly 10 seconds of silence strictly from the moment playback completed
+            # Count exactly 10 seconds of silence strictly after playback has completed
             await asyncio.sleep(10.0)
-            if not self.is_active:
+            if not self.is_active or (self.current_turn_task and not self.current_turn_task.done()):
                 return
 
             salutation = get_customer_salutation(self.current_customer)
@@ -130,6 +131,7 @@ class CallSession:
         if audio:
             await self.send_audio(audio, sentence_id=1)
         self.is_greeting = False
+        await self.send_json({"type": "turn_complete"})
         await self.send_json({"type": "state", "state": "listening"})
 
     async def handle_user_text(self, text: str):
@@ -224,6 +226,7 @@ class CallSession:
             logger.error("Turn error: %s", e)
             await self.send_json({"type": "error", "message": "Connection error with speech services."})
         finally:
+            await self.send_json({"type": "turn_complete"})
             await self.send_json({"type": "state", "state": "listening"})
 
 
